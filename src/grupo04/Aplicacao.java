@@ -14,7 +14,7 @@ public class Aplicacao {
     // CPF - CODIGO - NOME - QUANTIDADE - PRECO VENDA - VALOR A PAGAR - TIPO CLIENTE
     private static int quantidadeLinhasProdutos = 0;
     private static int quantidadeLinhasVendas = 0;
-    private static int quantidadeLinhasCliente = 0;
+    //private static int quantidadeLinhasCliente = 0;
 
     public static void main(String[] args) {
 
@@ -59,7 +59,7 @@ public class Aplicacao {
                     pesquisarNomeProduto(produtos, ler);
                     break;
                 case "6":
-                    realizarVenda(produtos, vendas, ler);
+                    realizarVenda(produtos, ler);
                     break;
                 case "7":
                     //RELATORIO DE VENDAS ANALITICO, TODAS AS VENDAS
@@ -323,7 +323,7 @@ public class Aplicacao {
         for (TipoProduto value : TipoProduto.values()) {
             System.out.println(value.ordinal() + " - " + value.getTipo());
         }
-        System.out.println("9 - VOLTAR AO MENU INICIAL");
+        System.out.println("3 - VOLTAR AO MENU INICIAL");
         String option = ler.nextLine();
         TipoProduto tipoProduto;
         switch (option) {
@@ -339,7 +339,7 @@ public class Aplicacao {
                 tipoProduto = TipoProduto.HIGIENE;
                 imprimirProdutosTipo(produtos, tipoProduto);
                 break;
-            case "9":
+            case "3":
                 break;
             default:
                 System.out.println("Opção inválida!");
@@ -368,7 +368,7 @@ public class Aplicacao {
     public static void imprimirCabecalho(String action) {
         if (action.equals("produtos")) {
             System.out.println("Tipo - Marca - Identificador - Nome - Preço de Custo" +
-                    " - Quantidade - Data Compra - Preço de Venda - Estoque");
+                    " - Data Compra - Preço de Venda - Estoque");
         }
         if (action.equals("estoque")) {
             System.out.println("---------------------------------------");
@@ -426,8 +426,8 @@ public class Aplicacao {
         String data = dataCompra.format(DateTimeFormatter.ofPattern("dd/MM/yyy HH:mm"));
         double precoVenda = (Double) produtos[i][7];
         int estoque = (Integer) produtos[i][8];
-        System.out.printf("%s - %s - %s - %s - %.2f - %d - %s - %.2f - %d %n", tipoCadastrado.getTipo(), marca,
-                identificador, nome, precoCusto, quantidade, data, precoVenda, estoque);
+        System.out.printf("%s - %s - %s - %s - %.2f - %s - %.2f - %d %n", tipoCadastrado.getTipo(), marca,
+                identificador, nome, precoCusto, data, precoVenda, estoque);
     }
 
     private static void pesquisarNomeProduto(Object[][] produtos, Scanner ler) {
@@ -451,9 +451,9 @@ public class Aplicacao {
         System.out.println();
     }
 
-    public static void realizarVenda(Object[][] produtos, Object[][] vendas, Scanner ler) {
+    public static void realizarVenda(Object[][] produtos, Scanner ler) {
         Object[][] vendasCliente = new Object[1][7];
-
+        int quantidadeLinhasCliente = 0;
         TipoClientes tipoClientes;
 
         String cpf = cadastrarCpf(ler);
@@ -467,10 +467,6 @@ public class Aplicacao {
         do {
             int i = 0;
             do {
-//                if (quantidadeLinhasCliente == vendasCliente.length) {
-//                    vendasCliente = redimensionarVendasCliente(vendasCliente);
-//                }
-
                 System.out.println("--- Para concluir a venda digite FIM ---");
                 System.out.print("Insira o identificador do produto: ");
                 identificador = ler.nextLine();
@@ -482,8 +478,40 @@ public class Aplicacao {
                     if (i < 0) {
                         System.out.println("Produto não encontrado, insira novamente.");
                     } else {
-                        registrarVenda(produtos, ler, identificador, vendasCliente, cpf, tipoClientes);
-                        ler.nextLine();
+                        System.out.print("Insira a quantidade: ");
+                        int quantidade = Integer.parseInt(ler.nextLine());
+
+                        if (quantidadeLinhasCliente == vendasCliente.length) {
+                            vendasCliente = redimensionarVendasCliente(vendasCliente);
+                        }
+
+                        for (int a = 0; a < produtos.length; a++) {
+
+                            int linhaClientes = encontrarPosicaoLivre(vendasCliente, "vendasCliente");
+
+                            String identificadorCadastrado = (String) produtos[a][2];
+                            if (identificadorCadastrado.equalsIgnoreCase(identificador)) {
+                                if (quantidade > (Integer) produtos[a][8]) {
+                                    System.out.println("Estoque insuficiente: " + produtos[a][8]);
+                                } else {
+                                    vendasCliente[linhaClientes][0] = cpf;
+                                    String nome = (String) produtos[a][3];
+                                    vendasCliente[linhaClientes][1] = tipoClientes;
+                                    vendasCliente[linhaClientes][2] = identificador;
+                                    vendasCliente[linhaClientes][3] = nome;
+                                    vendasCliente[linhaClientes][4] = quantidade;
+                                    double precoVenda = (Double) produtos[a][7];
+                                    vendasCliente[linhaClientes][5] = precoVenda;
+                                    vendasCliente[linhaClientes][6] = (Integer) vendasCliente[linhaClientes][4] *
+                                            (Double) vendasCliente[linhaClientes][5];
+                                    int estoque = (Integer) produtos[a][8];
+                                    estoque -= quantidade;
+                                    produtos[a][8] = estoque;
+
+                                    quantidadeLinhasCliente++;
+                                }
+                            }
+                        }
                     }
                 }
             } while ((i < 0));
@@ -556,56 +584,6 @@ public class Aplicacao {
                 System.out.println("Opção inválida");
         }
         return TipoClientes.FISICA;
-    }
-
-    public static void registrarVenda(Object[][] produtos, Scanner ler, String identificador,
-                                      Object[][] vendasCliente, String cpf, TipoClientes tipoClientes) {
-
-
-        System.out.print("Insira a quantidade: ");
-        int quantidade = ler.nextInt();
-
-//            int linhaLivreVendas = encontrarPosicaoLivre(vendas, "vendas");
-        for (int i = 0; i < produtos.length; i++) {
-            if (quantidadeLinhasCliente == vendasCliente.length) {
-                vendasCliente = redimensionarVendasCliente(vendasCliente);
-            }
-            int linhaClientes = encontrarPosicaoLivre(vendasCliente, "vendasCliente");
-
-            String identificadorCadastrado = (String) produtos[i][2];
-            if (identificadorCadastrado.equalsIgnoreCase(identificador)) {
-                if (quantidade > (Integer) produtos[i][8]) {
-                    System.out.println("Estoque insuficiente: " + produtos[i][8]);
-                } else {
-//                        vendas[linhaLivreVendas][0] = cpf;
-//                        vendas[linhaLivreVendas][1] = identificador;
-//                        vendas[linhaLivreVendas][2] = nome;
-//                        vendas[linhaLivreVendas][3] = quantidade;
-//                        vendas[linhaLivreVendas][4] = precoVenda;
-//                        vendas[linhaLivreVendas][5] = (Double) vendas[linhaLivreVendas][4] * quantidade;
-
-                    vendasCliente[linhaClientes][0] = cpf;
-                    String nome = (String) produtos[i][3];
-                    vendasCliente[linhaClientes][1] = tipoClientes;
-                    vendasCliente[linhaClientes][2] = identificador;
-                    vendasCliente[linhaClientes][3] = nome;
-                    vendasCliente[linhaClientes][4] = quantidade;
-
-                    double precoVenda = (Double) produtos[i][7];
-                    vendasCliente[linhaClientes][5] = precoVenda;
-                    vendasCliente[linhaClientes][6] = (Integer) vendasCliente[linhaClientes][4] *
-                            (Double) vendasCliente[linhaClientes][5];
-                    int estoque = (Integer) produtos[i][8];
-                    estoque -= quantidade;
-                    produtos[i][8] = estoque;
-
-                    linhaClientes++;
-//                        quantidadeLinhasVendas++;
-                    quantidadeLinhasCliente++;
-                    return;
-                }
-            }
-        }
     }
 
     public static Object[][] redimensionarVendas(Object[][] vendas) {
