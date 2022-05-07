@@ -20,7 +20,7 @@ public enum TipoProduto {
         return this.tipo;
     }
 
-    public double calcularPrecoVenda(TipoProduto tipo, double custo){
-        return tipo.markup * custo;
+    public double calcularPrecoVenda(double custo){
+        return markup * custo;
     }
 }
